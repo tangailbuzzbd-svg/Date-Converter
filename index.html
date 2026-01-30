@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Date Tools</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Moment.js & Moment-Hijri -->
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment-hijri@2.1.2/moment-hijri.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Hind Siliguri', sans-serif;
+            background-color: #f3f4f6;
+            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        .numeric-font {
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: 600;
+        }
+        .tab-active {
+            color: #059669; /* emerald-600 */
+            border-bottom: 2px solid #059669;
+            background-color: #ecfdf5; /* emerald-50 */
+        }
+        .tab-inactive {
+            color: #6b7280; /* gray-500 */
+            border-bottom: 2px solid transparent;
+        }
+        .tab-inactive:hover {
+            color: #059669;
+            background-color: #f9fafb;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="glass-effect w-full max-w-md rounded-2xl shadow-xl border border-gray-200 relative overflow-hidden">
+        
+        <!-- Tab Navigation -->
+        <div class="flex border-b border-gray-200">
+            <button onclick="switchTab('converter')" id="tab-converter" class="flex-1 py-4 text-center font-bold transition-all duration-300 tab-active">
+                <i class="fa-solid fa-repeat mr-2"></i>Converter
+            </button>
+            <button onclick="switchTab('calculator')" id="tab-calculator" class="flex-1 py-4 text-center font-bold transition-all duration-300 tab-inactive">
+                <i class="fa-solid fa-calculator mr-2"></i>Calculator
+            </button>
+        </div>
+
+        <div class="p-8">
+            
+            <!-- ================= CONVERTER SECTION ================= -->
+            <div id="converterView">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800" id="appTitle">English to Hijri</h1>
+                        <p class="text-xs text-gray-500">স্মার্ট তারিখ কনভার্টার</p>
+                    </div>
+                    <button onclick="toggleMode()" class="bg-gray-100 p-3 rounded-full hover:bg-gray-200 transition shadow-sm group" title="Switch Mode">
+                        <i class="fa-solid fa-repeat text-emerald-600 group-hover:rotate-180 transition-transform duration-500"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="relative">
+                        <label class="block text-gray-700 font-medium mb-2 text-sm" id="inputLabel">ইংরেজি তারিখ লিখুন (DD/MM/YYYY)</label>
+                        <input 
+                            type="text" 
+                            id="textInput" 
+                            placeholder="যেমন: 10/12/2025" 
+                            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition duration-200 text-gray-700 text-lg numeric-font"
+                            oninput="handleTyping()"
+                        >
+                        <p class="text-xs text-gray-400 mt-1" id="helperText">সঠিক ফরম্যাটে তারিখ টাইপ করুন</p>
+                    </div>
+
+                    <button 
+                        onclick="convertDate()" 
+                        class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-3 rounded-lg shadow-md transition duration-300 transform hover:scale-[1.02] active:scale-95"
+                    >
+                        কনভার্ট করুন
+                    </button>
+                </div>
+
+                <!-- Converter Result -->
+                <div id="resultCard" class="hidden mt-8 animate-pulse-once">
+                    <div class="p-6 bg-emerald-50 rounded-xl border border-emerald-100 text-center relative group">
+                        <p class="text-xs text-emerald-600 font-bold uppercase tracking-wider mb-2" id="resultLabel">হিজরি তারিখ</p>
+                        
+                        <div class="flex flex-col items-center justify-center bg-white p-4 rounded-lg border border-emerald-100 shadow-sm">
+                            <div class="flex items-center gap-3">
+                                <h3 id="dateOutput" class="text-3xl font-bold text-gray-800 numeric-font tracking-wider"></h3>
+                                <button onclick="copyToClipboard()" class="p-2 text-gray-400 hover:text-emerald-600 transition rounded-full hover:bg-emerald-50">
+                                    <i class="fa-regular fa-copy text-xl"></i>
+                                </button>
+                            </div>
+                            <p id="monthNameOutput" class="text-emerald-600 font-medium mt-1 text-lg"></p>
+                        </div>
+                        <div id="copyFeedback" class="absolute bottom-2 left-1/2 transform -translate-x-1/2 translate-y-full opacity-0 transition text-emerald-600 text-sm font-medium">Copied!</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= CALCULATOR SECTION ================= -->
+            <div id="calculatorView" class="hidden">
+                <div class="text-center mb-6">
+                    <h1 class="text-2xl font-bold text-gray-800">Age Calculator</h1>
+                    <p class="text-xs text-gray-500">দুটি তারিখের পার্থক্য বের করুন</p>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- Start Date -->
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1 text-sm">শুরুর তারিখ (Start Date)</label>
+                        <input 
+                            type="text" 
+                            id="calcStartInput" 
+                            placeholder="DD/MM/YYYY (যেমন: 10/05/2000)" 
+                            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition duration-200 text-gray-700 text-lg numeric-font"
+                        >
+                    </div>
+
+                    <!-- End Date -->
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1 text-sm">শেষ তারিখ (End Date)</label>
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                id="calcEndInput" 
+                                placeholder="DD/MM/YYYY (Default: Today)" 
+                                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition duration-200 text-gray-700 text-lg numeric-font"
+                            >
+                            <button onclick="setToday()" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-gray-600">Today</button>
+                        </div>
+                    </div>
+
+                    <button 
+                        onclick="calculateDifference()" 
+                        class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 rounded-lg shadow-md transition duration-300 transform hover:scale-[1.02] active:scale-95"
+                    >
+                        হিসাব করুন
+                    </button>
+                </div>
+
+                <!-- Calculator Result -->
+                <div id="calcResultCard" class="hidden mt-8 animate-pulse-once">
+                    <div class="p-6 bg-blue-50 rounded-xl border border-blue-100 text-center">
+                        <p class="text-xs text-blue-600 font-bold uppercase tracking-wider mb-2">সর্বমোট সময়</p>
+                        <div class="bg-white p-4 rounded-lg border border-blue-100 shadow-sm">
+                            <h3 id="ageOutput" class="text-xl font-bold text-gray-800 leading-relaxed"></h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <textarea id="hiddenCopyArea" style="position: absolute; left: -9999px;"></textarea>
+
+    <script>
+        // --- TAB LOGIC ---
+        function switchTab(tabName) {
+            const converterView = document.getElementById('converterView');
+            const calculatorView = document.getElementById('calculatorView');
+            const tabConv = document.getElementById('tab-converter');
+            const tabCalc = document.getElementById('tab-calculator');
+
+            if (tabName === 'converter') {
+                converterView.classList.remove('hidden');
+                calculatorView.classList.add('hidden');
+                
+                tabConv.classList.add('tab-active');
+                tabConv.classList.remove('tab-inactive');
+                tabCalc.classList.add('tab-inactive');
+                tabCalc.classList.remove('tab-active');
+            } else {
+                converterView.classList.add('hidden');
+                calculatorView.classList.remove('hidden');
+
+                tabConv.classList.remove('tab-active');
+                tabConv.classList.add('tab-inactive');
+                tabCalc.classList.remove('tab-inactive');
+                tabCalc.classList.add('tab-active');
+                
+                // Auto set today for calculator if empty
+                if (!document.getElementById('calcEndInput').value) {
+                    setToday();
+                }
+            }
+        }
+
+        // --- CONVERTER LOGIC ---
+        let isEnglishToHijri = true;
+        const textInput = document.getElementById('textInput');
+        const appTitle = document.getElementById('appTitle');
+        const inputLabel = document.getElementById('inputLabel');
+        const resultLabel = document.getElementById('resultLabel');
+        const helperText = document.getElementById('helperText');
+        const resultCard = document.getElementById('resultCard');
+        const dateOutput = document.getElementById('dateOutput');
+        const monthNameOutput = document.getElementById('monthNameOutput');
+
+        function toggleMode() {
+            isEnglishToHijri = !isEnglishToHijri;
+            textInput.value = '';
+            resultCard.classList.add('hidden');
+            resultCard.classList.remove('block');
+
+            if (isEnglishToHijri) {
+                appTitle.innerText = "English to Hijri";
+                inputLabel.innerText = "ইংরেজি তারিখ লিখুন (DD/MM/YYYY)";
+                textInput.placeholder = "যেমন: 10/12/2025";
+                resultLabel.innerText = "হিজরি তারিখ";
+                helperText.innerText = "সঠিক ফরম্যাটে তারিখ টাইপ করুন";
+            } else {
+                appTitle.innerText = "Hijri to English";
+                inputLabel.innerText = "হিজরি তারিখ লিখুন (YYYY/MM/DD)";
+                textInput.placeholder = "যেমন: 1447/08/11";
+                resultLabel.innerText = "ইংরেজি তারিখ";
+                helperText.innerText = "হিজরি তারিখ টাইপ করুন";
+            }
+        }
+
+        function handleTyping() {
+            textInput.classList.remove('ring-2', 'ring-red-500');
+        }
+
+        function convertDate() {
+            const rawValue = textInput.value.trim();
+            if (!rawValue) { showError(textInput); return; }
+
+            let m;
+            if (isEnglishToHijri) {
+                m = moment(rawValue, ['DD/MM/YYYY', 'YYYY-MM-DD', 'DD-MM-YYYY', 'YYYY/MM/DD', 'D/M/YYYY'], true);
+                if (!m.isValid()) m = moment(rawValue);
+                if (m.isValid()) {
+                    showResult(m.format('iYYYY/iMM/iDD'), m.format('iMMMM'));
+                } else { showError(textInput); }
+            } else {
+                m = moment(rawValue, ['iYYYY/iMM/iDD', 'iYYYY-iMM-iDD', 'iDD/iMM/iYYYY'], false);
+                if (m.isValid()) {
+                    showResult(m.format('YYYY/MM/DD'), m.format('MMMM'));
+                } else { showError(textInput); }
+            }
+        }
+
+        function showResult(dateStr, monthStr) {
+            dateOutput.innerText = dateStr;
+            monthNameOutput.innerText = monthStr;
+            resultCard.classList.remove('hidden');
+            resultCard.classList.add('block');
+        }
+
+        function showError(inputElem) {
+            inputElem.classList.add('ring-2', 'ring-red-500');
+            setTimeout(() => inputElem.classList.remove('ring-2', 'ring-red-500'), 500);
+        }
+
+        function copyToClipboard() {
+            const text = dateOutput.innerText;
+            const hiddenArea = document.getElementById('hiddenCopyArea');
+            const feedback = document.getElementById('copyFeedback');
+            if (!text) return;
+            hiddenArea.value = text;
+            hiddenArea.select();
+            document.execCommand('copy');
+            feedback.style.opacity = '1';
+            feedback.style.transform = 'translate(-50%, 10px)';
+            setTimeout(() => {
+                feedback.style.opacity = '0';
+                feedback.style.transform = 'translate(-50%, 100%)';
+            }, 2000);
+        }
+
+        // --- CALCULATOR LOGIC ---
+        function setToday() {
+            document.getElementById('calcEndInput').value = moment().format('DD/MM/YYYY');
+        }
+
+        function calculateDifference() {
+            const startStr = document.getElementById('calcStartInput').value.trim();
+            const endStr = document.getElementById('calcEndInput').value.trim();
+            const calcStartInput = document.getElementById('calcStartInput');
+            const calcEndInput = document.getElementById('calcEndInput');
+
+            if (!startStr) { showError(calcStartInput); return; }
+            if (!endStr) { showError(calcEndInput); return; }
+
+            // Parse dates
+            const startDate = moment(startStr, ['DD/MM/YYYY', 'YYYY-MM-DD', 'DD-MM-YYYY'], true);
+            const endDate = moment(endStr, ['DD/MM/YYYY', 'YYYY-MM-DD', 'DD-MM-YYYY'], true);
+
+            if (!startDate.isValid()) { showError(calcStartInput); return; }
+            if (!endDate.isValid()) { showError(calcEndInput); return; }
+
+            if (endDate.isBefore(startDate)) {
+                alert("শেষের তারিখ শুরুর তারিখের পরে হতে হবে!");
+                return;
+            }
+
+            // Precise Calculation
+            const tempDate = startDate.clone();
+            const years = endDate.diff(tempDate, 'years');
+            tempDate.add(years, 'years');
+            
+            const months = endDate.diff(tempDate, 'months');
+            tempDate.add(months, 'months');
+            
+            const days = endDate.diff(tempDate, 'days');
+
+            // Format Output
+            let output = '';
+            if (years > 0) output += `${years} Years `;
+            if (months > 0) output += `${months} Months `;
+            output += `${days} Days`;
+
+            // Bangla Translation (Optional, keeping English numbers as per request but labels can be mixed)
+            // output = output.replace('Years', 'বছর').replace('Months', 'মাস').replace('Days', 'দিন');
+
+            document.getElementById('ageOutput').innerText = output;
+            
+            const resCard = document.getElementById('calcResultCard');
+            resCard.classList.remove('hidden');
+            resCard.classList.add('block');
+        }
+
+        // Animation Style
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .animate-pulse-once {
+                animation: fadeIn 0.5s ease-out forwards;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
