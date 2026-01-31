@@ -42,7 +42,7 @@
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<body class="flex items-center justify-center min-h-screen p-4" onload="initApp()">
 
     <div class="glass-effect w-full max-w-md rounded-2xl shadow-xl border border-gray-200 relative overflow-hidden">
         
@@ -60,6 +60,31 @@
             
             <!-- ================= CONVERTER SECTION ================= -->
             <div id="converterView">
+                
+                <!-- Today's Date Widget (Clickable) -->
+                <div class="bg-gradient-to-r from-emerald-50 to-teal-50 p-2 rounded-xl border border-emerald-100 mb-6 flex justify-between items-center shadow-sm">
+                    
+                    <!-- English Date Button -->
+                    <div onclick="selectToday('english')" class="flex-1 p-2 rounded-lg hover:bg-white/60 cursor-pointer transition text-left group relative">
+                        <p class="text-xs text-gray-500 font-bold uppercase tracking-wide group-hover:text-emerald-600 transition">Today (English)</p>
+                        <p class="text-lg font-bold text-gray-700 numeric-font mt-1 group-hover:text-emerald-700 transition" id="todayEnglish">--/--/----</p>
+                        <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition text-emerald-500 text-xs">
+                            <i class="fa-solid fa-hand-pointer"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="h-10 w-px bg-emerald-200 mx-2"></div>
+                    
+                    <!-- Hijri Date Button -->
+                    <div onclick="selectToday('hijri')" class="flex-1 p-2 rounded-lg hover:bg-white/60 cursor-pointer transition text-right group relative">
+                        <p class="text-xs text-emerald-600 font-bold uppercase tracking-wide">Today (Hijri)</p>
+                        <p class="text-lg font-bold text-emerald-700 numeric-font mt-1" id="todayHijri">--/--/----</p>
+                        <div class="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition text-emerald-500 text-xs">
+                            <i class="fa-solid fa-hand-pointer"></i>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="flex justify-between items-center mb-6">
                     <div>
                         <h1 class="text-2xl font-bold text-gray-800" id="appTitle">English to Hijri</h1>
@@ -168,7 +193,17 @@
     <textarea id="hiddenCopyArea" style="position: absolute; left: -9999px;"></textarea>
 
     <script>
-        // --- TAB LOGIC ---
+        // --- INIT & TAB LOGIC ---
+        function initApp() {
+            updateTodayDisplay();
+        }
+
+        function updateTodayDisplay() {
+            const now = moment();
+            document.getElementById('todayEnglish').innerText = now.format('DD-MM-YYYY');
+            document.getElementById('todayHijri').innerText = now.format('iDD-iMM-iYYYY');
+        }
+
         function switchTab(tabName) {
             const converterView = document.getElementById('converterView');
             const calculatorView = document.getElementById('calculatorView');
@@ -210,9 +245,8 @@
         const dateOutput = document.getElementById('dateOutput');
         const monthNameOutput = document.getElementById('monthNameOutput');
 
-        function toggleMode() {
-            isEnglishToHijri = !isEnglishToHijri;
-            textInput.value = '';
+        // Update UI based on mode
+        function updateConverterUI() {
             resultCard.classList.add('hidden');
             resultCard.classList.remove('block');
 
@@ -224,11 +258,36 @@
                 helperText.innerText = "সঠিক ফরম্যাটে তারিখ টাইপ করুন";
             } else {
                 appTitle.innerText = "Hijri to English";
-                inputLabel.innerText = "হিজরি তারিখ লিখুন (YYYY/MM/DD)";
-                textInput.placeholder = "যেমন: 1447/08/11";
+                inputLabel.innerText = "হিজরি তারিখ লিখুন (DD-MM-YYYY)";
+                textInput.placeholder = "যেমন: 19-06-1447";
                 resultLabel.innerText = "ইংরেজি তারিখ";
                 helperText.innerText = "হিজরি তারিখ টাইপ করুন";
             }
+        }
+
+        // Toggle button handler
+        function toggleMode() {
+            isEnglishToHijri = !isEnglishToHijri;
+            textInput.value = ''; // Clear input on manual toggle
+            updateConverterUI();
+        }
+
+        // Click handler for Today blocks
+        function selectToday(type) {
+            const now = moment();
+            
+            if (type === 'english') {
+                isEnglishToHijri = true;
+                updateConverterUI();
+                textInput.value = now.format('DD-MM-YYYY');
+            } else {
+                isEnglishToHijri = false;
+                updateConverterUI();
+                textInput.value = now.format('iDD-iMM-iYYYY');
+            }
+            
+            // Auto convert after selection
+            convertDate();
         }
 
         function handleTyping() {
@@ -241,15 +300,21 @@
 
             let m;
             if (isEnglishToHijri) {
+                // English Input -> Hijri Output
+                // Accept input with / or -
                 m = moment(rawValue, ['DD/MM/YYYY', 'YYYY-MM-DD', 'DD-MM-YYYY', 'YYYY/MM/DD', 'D/M/YYYY'], true);
                 if (!m.isValid()) m = moment(rawValue);
                 if (m.isValid()) {
-                    showResult(m.format('iYYYY/iMM/iDD'), m.format('iMMMM'));
+                    // Output format: DD-MM-YYYY (Hyphenated)
+                    showResult(m.format('iDD-iMM-iYYYY'), m.format('iMMMM'));
                 } else { showError(textInput); }
             } else {
-                m = moment(rawValue, ['iYYYY/iMM/iDD', 'iYYYY-iMM-iDD', 'iDD/iMM/iYYYY'], false);
+                // Hijri Input -> English Output
+                // Accept input with / or -
+                m = moment(rawValue, ['iDD/iMM/iYYYY', 'iDD-iMM-iYYYY', 'iYYYY/iMM/iDD', 'iYYYY-iMM-iDD'], false);
                 if (m.isValid()) {
-                    showResult(m.format('YYYY/MM/DD'), m.format('MMMM'));
+                    // Output format: DD-MM-YYYY (Hyphenated)
+                    showResult(m.format('DD-MM-YYYY'), m.format('MMMM'));
                 } else { showError(textInput); }
             }
         }
@@ -323,9 +388,6 @@
             if (years > 0) output += `${years} Years `;
             if (months > 0) output += `${months} Months `;
             output += `${days} Days`;
-
-            // Bangla Translation (Optional, keeping English numbers as per request but labels can be mixed)
-            // output = output.replace('Years', 'বছর').replace('Months', 'মাস').replace('Days', 'দিন');
 
             document.getElementById('ageOutput').innerText = output;
             
